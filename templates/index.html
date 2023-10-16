@@ -1,0 +1,500 @@
+<!-- 2023.10.12 장지수 +-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- 기기의 너비에 맞게 조절하고, 초기 배율(scale)을 1.0으로 설정하겠다는 의미. 
+        주로 모바일 반응형 웹 디자인에서 사용 + 표준 문자열 인코딩 방식 채택 -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 글자체 +-->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+
+  <!-- 부트스트랩 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+  <title>정글 번개 컴온!!</title>
+  <style>
+    /* CSS Style */
+    .grid-container {
+      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding-left: 100px;
+      padding-right: 100px;
+      gap: 5px;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      line-height: 1.6;
+      /* 텍스트 간격을 늘리거나 줄여서 가독성을 높일 수 있어요. */
+      margin: 20px;
+      /* 본문 주위에 여백을 추가해서 내용이 더 돋보이게 할 수 있어요. */
+    }
+
+    h1,
+    h2,
+    h3 {
+      font-weight: 700;
+      /* 제목의 글씨 두께를 높여 강조할 수 있어요. */
+    }
+
+    .card {
+      width: 320px;
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .card-info {
+      font-size: 14px;
+      color: #888;
+    }
+
+    .btn-primary:not(.active) {
+      background-color: gray;
+      color: white;
+      border: none
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: space-start;
+      margin-right: 20px;
+    }
+
+    .join-button {
+      background-color: blue;
+      color: white;
+      padding: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .button-container a {
+      text-decoration: none;
+      color: #888;
+      margin-right: 20px;
+    }
+
+    .time {
+      font-size: 12pt;
+      color: #888;
+      text-align: right;
+      margin-top: 10px;
+    }
+
+    .bottom-button-container {
+      display: flex;
+      gap: 10px; /* 간격을 조절할 크기 */
+  }
+
+    .card-title,
+    .card-info,
+    .button-container,
+    .time {
+      padding: 3px;
+    }
+
+    /* 카테고리 버튼 */
+    .category-button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 40px;
+    }
+
+    .category-buttons {
+      display: flex;
+      justify-content: center;
+      margin-left: 5px;
+      margin-right: 5px;
+    }
+
+    .category-buttons button {
+      padding: 15px 25px;
+      font-size: 18px;
+      margin-left: 5px;
+      margin-right: 5px;
+    }
+
+    .additional-buttons {
+      float: right;
+    }
+
+    #independent-button {
+      margin-left: 10px;
+      /* 참가한 게시글 버튼과의 간격*/
+    }
+
+    .recruitment-complete .join-button {
+      background-color: red;
+    }
+
+    .join-button-active .join-button {
+      background-color: blue;
+    }
+  </style>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <!-- 부트스트랩 및 jQuery, Popper.js 스크립트 -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('btnLogout').addEventListener('click', function (event) {
+      event.preventDefault(); // 기본 동작(하이퍼링크 클릭)을 중지합니다.
+      window.location.href = '/logout'; // /logout으로 리디렉션합니다.
+    });
+  </script>
+
+  <!-- JavaScript 코드를 HTML에 포함시킬 때 사용 -->
+  <script>
+    let temp_category = ""
+    let my_post_status = true
+    let login_userName = ''
+    // data fetch
+    $(document).ready(function () {
+      showFilteredPost('운동')
+    });
+
+    // 카테고리 버튼 탭시 필터링 데이터 요청 및 UI업데이트
+    function showFilteredPost(category) {
+      // 버튼 UI 변경
+
+      let activeButton = null;
+      $('.btn-primary').removeClass('active');
+      $(`.btn-primary:contains(${category})`).addClass('active');
+      temp_category = category
+
+      $.ajax({
+        url: '/jungbun/list',
+        method: 'GET',
+        data: { 'category': category },
+        success: function (response) {
+
+          showUserName(response.user)
+          if (response.result == 'success') {
+            console.log('showFilteredPost successfully:');
+
+            $('#posts').empty()
+
+            response.posts.forEach(function (post, index) {
+              
+              var buttonText, buttonClass, isDisabled, buttonFunction;
+              let part_str = post.participants.join(',')
+              console.log("Data received");
+              console.log(post);
+              // let part_str = post.participants.join(',')
+              let participants = post.participants
+
+              // 전처리
+              if (post.status == "모집완료") {
+                buttonText = "모집완료";
+                buttonClass = "recruitment-complete";
+                buttonFunction = null;
+                isDisabled = true;
+              } else {
+                buttonText = "참가하기";
+                buttonClass = "join-button-active";
+                isDisabled = false;
+                buttonFunction = "participateToPost";
+              }
+
+              // 중요
+              // 로그인된 유저의 정보를 전역으로 저장 
+              login_userName = response.user
+              localStorage.setItem('userName', login_userName);
+
+              if (participants.includes(response.user)) {
+                buttonText = "참가취소";
+                buttonClass = "cancel-button-active";
+                isDisabled = false;
+                buttonFunction = "cancelParticipation";
+              }
+
+              if (post.writer == response.user) {
+                var postId = post._id;
+    
+                var deleteButtonHtml = '<button class="join-button-active" onclick="deletePost(\'' + postId + '\')">삭제하기</button>';
+              } else {
+                  var deleteButtonHtml = ''; // 또는 원하는 다른 기본값 설정
+                }
+
+              // 게시글 Card UI 부분
+              let postHtml = `
+                            <div class="card-title">${post.title}</div>
+                            <div class="card-info">종류: ${post.category}</div>
+                            <div class="card-info">장소: ${post.place}</div>
+                            <div class="card-info">시간: ${post.date} ${post.time}</div>
+                            <div class="card-info">현황: ${post.participant_num}/${post.max_people_num}</div>
+                            <div class="card-info">작성자: ${post.writer}</div>
+                            <div class="card-info">참가자: ${part_str}</div>
+                            <span class="time"></span>
+                            <div class="bottom-button-container">
+                                  <button class="${buttonClass}" onclick="${buttonFunction}('${post._id}')" ${isDisabled ? 'disabled' : ''}>${buttonText}</button>
+                                  ${deleteButtonHtml}
+                              </div>
+                        `;
+
+              $('#posts').append(`
+                        <div class="card">
+                            ${postHtml}
+                        </div>
+                    `)
+            });
+
+          } else {
+            console.error('Failed to fetch data from the server.');
+          }
+        },
+        error: function (error) {
+          console.error('Error occurred:', error);
+        }
+      });
+    }
+
+    // 내 참가 목록 확인 
+    function showMyActivity() {
+      $.ajax({
+        type: "GET",
+        url: "/jungbun/my-activity",
+        success: function (response) {
+          if (response['result'] == 'success') {
+            console.log('showMyActivity successfully:');
+            $('#posts').empty()
+
+            const categoryButtonIDs = ['button1', 'button2', 'button3', 'button4', 'button5'];
+
+            if (my_post_status == true) {
+                // 숨길 카테고리 버튼들 숨기기
+                categoryButtonIDs.forEach(function(buttonID) {
+                const button = document.getElementById(buttonID);
+                if (button) {
+                  button.style.display = 'none';
+                }
+              });
+              my_post_status = false
+            } else {
+              categoryButtonIDs.forEach(function(buttonID) {
+                const button = document.getElementById(buttonID);
+                if (button) {
+                  button.style.display = 'block';
+                }
+              });
+              my_post_status = true
+            }
+
+            response.posts.forEach(function (post, index) {
+              
+              var buttonText, buttonClass, isDisabled, buttonFunction;
+              // 문자열 전처리
+              let part_str = post.participants.join(',')
+              let participants = post.participants
+
+              if (post.status == "모집완료") {
+                buttonText = "모집완료";
+                buttonClass = "recruitment-complete";
+                isDisabled = true;
+                buttonFunction = null;  // 모집완료일 경우 함수를 null로 설정
+              } else {
+                buttonText = "참가하기";
+                buttonClass = "join-button-active";
+              isDisabled = false;         
+                buttonFunction = "participateToPost";  // 참가하기일 경우 호출되는 함수 설정
+              }
+
+              if (participants.includes(response.user)) {
+                buttonText = "참가취소";  // "참가취소"로 변경
+                buttonClass = "cancel-button-active";  // 필요에 따라 취소 버튼에 맞는 클래스로 변경
+                isDisabled = false;  // 취소 버튼은 항상 활성화
+                buttonFunction = "cancelParticipation";  // 참가취소일 경우 호출되는 함수 설정
+              }
+
+              if (post.writer == response.user) {
+                  var deleteButtonHtml = '<button class="join-button-active" onclick="deletePost()">삭제하기</button>';
+              } else {
+                  var deleteButtonHtml = ''; // 또는 원하는 다른 기본값 설정
+                }
+
+                console.log(post.participant_num)
+                var a = parseInt(post.participant_num, 10);
+                
+                var b = a.toString();
+              // 게시글 Card UI 부분
+              let postHtml = `
+                          <div class="card-title">${post.title}</div>
+                          <div class="card-info">종류: ${post.category}</div>
+                          <div class="card-info">장소: ${post.place}</div>
+                          <div class="card-info">시간: ${post.date}</div>
+                          <div class="card-info">현황: ${b}/${post.max_people_num}</div>
+                          <div class="card-info">작성자: ${post.writer}</div>
+                          <div class="card-info">참가자: ${part_str}</div>
+                          <span class="time"></span>
+                          <div class="bottom-button-container">
+        <button class="${buttonClass}" onclick="${buttonFunction}('${post._id}')" ${isDisabled ? 'disabled' : ''}>${buttonText}</button>
+        ${deleteButtonHtml} <!-- 조건에 따라 삭제하기 버튼이 추가 또는 제거됨 -->
+    </div>
+                        </div>
+                      `;
+
+              $('#posts').append(`
+                      <div class="card">
+                          ${postHtml}
+                      </div>
+                  `)
+            });
+          } else {
+            console.error('Failed to fetch data from the server.');
+          }
+        },
+        error: function (error) {
+          console.error('Error occurred:', error);
+        }
+      });
+    }
+
+    function participateToPost(postId) {
+      var userConfirmed = confirm('참가 확정하시겠어요??');
+      console.log("This is Post ID");
+      console.log(postId);
+      // 추후에 참가자수 늘리는 것으로 업데이트 
+      if (userConfirmed) {
+        $.ajax({
+          type: "POST",
+          url: "/jungbun/participate",
+          data: { post_id: postId },
+          success: function (response) {
+            if (response['result'] == 'success') {
+              alert('참가 신청되었어요:)');
+              showFilteredPost('음식');
+              window.location.reload();
+            } else {
+              alert('참가에 실패했어요:(');
+            }
+          }
+        });
+      } else {
+        console.log('참가 확정 취소');
+      }
+    }
+
+    function cancelParticipation(postId) {
+      var userConfirmed = confirm('참가 취소하시겠어요??');
+      if (userConfirmed) {
+        $.ajax({
+          type: "POST",
+          url: "/jungbun/cancel-participation",
+          data: { post_id: postId },
+          success: function (response) {
+            if (response['result'] == 'success') {
+              alert('참가 취소되었어요:)');
+              showFilteredPost('음식');
+            } else {
+              alert('참가취소에 실패했어요:(');
+            }
+          }
+        });
+      } else {
+        console.log('실행 취소');
+      }
+    }
+
+      function navigateToPostWriting() {
+          window.location.href = '/upload';
+      }
+
+    function showUserName(userName) {
+        const pageTitleElement = document.querySelector('h1.fw-bold'); // 요소를 선택
+
+        if (pageTitleElement) {
+          pageTitleElement.textContent = `환영합니다, ${userName}님!`; // 텍스트를 업데이트
+        }
+    }
+
+    function deletePost(postId) {
+          var userConfirmed = confirm('게시글을 삭제 하시겠어요??');
+          if (userConfirmed) {
+              $.ajax({
+                type: "POST",
+                url: "/jungbun/deletePost",
+                data: { post_id: postId },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        alert('삭제되었어요:)');
+                        showFilteredPost(temp_category);
+                    } else {
+                        alert('삭제에 실패했어요:(');
+                    }
+                }
+            });
+          } else {
+              console.log('실행 취소');
+          }
+        }
+
+          // `popstate` 이벤트 리스너 등록
+          window.addEventListener('popstate', function (event) {
+            // `popstate` 이벤트가 발생할 때 A 페이지 내의 함수 호출
+            showFilteredPost(temp_category);
+          });
+  </script>
+</head>
+
+<body>
+  <header>
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+      <div class="container">
+        <a href="#" class="navbar-brand d-flex align-items-center">
+          <strong>정글번개</strong>
+        </a>
+
+        <!-- 네비바 우측 버튼 -->
+        <div class="ml-auto">
+          <button type="button" class="btn btn-light" onclick="navigateToPostWriting()">글 작성</button>
+          <button type="button" class="btn btn-light" onclick="showMyActivity()">내 참가목록</button>
+          <button id="btnLogout" class="btn btn-light" onclick="location.href='/logout'">로그아웃</button>
+            <i class="fas fa-sign-out-alt"></i>
+        
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="py-5 text-center container">
+    <div class="row py-lg-5">
+      <div class="col-lg-6 col-md-8 mx-auto">
+        <h1 class="fw-bold">정글번개</h1>
+        <p class="lead text-muted">오늘 저녁먹고 운동 고? <br>
+          운동, 식사, 게임 등 다양한 취미를 정글러들과 함께!<br>
+          정글번개를 올려서 정글러들을 모아보세요! </p>
+      </div>
+    </div>
+
+    <div class="container">
+
+      <div class="category-buttons">
+        <button type="button" class="btn btn-primary" id="button1" onclick="showFilteredPost('운동')">운동</button>
+        <button type="button" class="btn btn-primary" id="button2" onclick="showFilteredPost('식사')">식사</button>
+        <button type="button" class="btn btn-primary" id="button3" onclick="showFilteredPost('게임')">게임</button>
+        <button type="button" class="btn btn-primary" id="button4" onclick="showFilteredPost('노래')">노래</button>
+        <button type="button" class="btn btn-primary" id="button5" onclick="showFilteredPost('커피')">커피</button>
+    </div>
+    
+  </section>
+
+  <!-- 메인 게시글 -->
+  <div class="grid-container" , id="posts">
+  </div>
+</body>
+
+</html>
